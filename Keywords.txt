@@ -1,0 +1,9 @@
+ESPTimeFunc KEYWORD1
+timeSynch   KEYWORD2
+begin   KEYWORD2
+getTimeStr KEYWORD2
+getDateStr KEYWORD2
+getTimeStruct	KEYWORD2
+getTimeUNIX	KEYWORD2
+compTimeInt KEYWORD2
+LITERAL1    daylightOffset_sec

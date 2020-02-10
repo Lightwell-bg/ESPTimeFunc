@@ -1,0 +1,14 @@
+{
+    "name": "ESPTimeFunc",
+    "keywords": "time, ntp, rtc, ds3231",
+    "description": "ESP8266 and ESP32 library for working with time functions",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/Lightwell-bg/NetCrtESP.git"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": ["espressif8266", "espressif32"],
+    "version": "1.0"
+  }

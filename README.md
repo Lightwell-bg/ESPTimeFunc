@@ -3,7 +3,7 @@ A library for working with time functions for ESP8266 and ESP32. To obtain accur
 
 ## Methods
 ```cpp
-		ESPTimeFunc(bool haveRTC = false); //constructor
+ESPTimeFunc(bool haveRTC = false); //constructor
         bool begin(uint8_t timeOffset, bool isDayLightSaving, String sNtpServerName,
 				const char* sNtpServerName2 = "pool.ntp.org", const char* sNtpServerName3 = "time.nist.gov",
         bool useRTC = false, bool allwsSynchRTCfNTP = false);

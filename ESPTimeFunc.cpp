@@ -14,17 +14,22 @@ bool ESPTimeFunc::begin(int8_t timeOffset, bool isDayLightSaving, String sNtpSer
     _haveRTC ? _useRTC = useRTC : _useRTC = false;
     _allwsSynchRTCfNTP = allwsSynchRTCfNTP;
     if (_haveRTC) {
-        if (!_rtc.begin()) {
-            Serial.println("Couldn't find RTC");
-            while (1);
+        uint8_t _tries = 5;
+        while (--_tries && !_rtc.begin()) {
+            Serial.println(F("Couldn't find RTC"));
+            //while (1);
+            delay(100);
         }  
-        if (_rtc.lostPower()) {
-            Serial.println("RTC lost power, lets set the time!");
-            _rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // following line sets the RTC to the date & time this sketch was compiled
-            // This line sets the RTC with an explicit date & time, for example to set
-            // January 21, 2014 at 3am you would call:
-            // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-        } 
+        if (_tries > 0) {
+            Serial.println(F("RTC found"));
+            if (_rtc.lostPower()) {
+                Serial.println(F("RTC lost power, lets set the time!"));
+                _rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // following line sets the RTC to the date & time this sketch was compiled
+                // This line sets the RTC with an explicit date & time, for example to set
+                // January 21, 2014 at 3am you would call:
+                // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+            } 
+        }
     }
     timeSynch();
 }
@@ -95,22 +100,24 @@ bool ESPTimeFunc::_getNtpTime() {
     struct tm *timeinfo;
     unsigned long summerOffsetVal = 0;
     if (WiFi.status() == WL_CONNECTED) {
+        String strTimeOffset; // "CET-2CEST,M3.5.0,M10.5.0/3"
+        String fullTZ;
+        if (_timeOffset > 0) 
+            strTimeOffset =  "-" + String(_timeOffset);   
+        else 
+            strTimeOffset =  "+" + String(abs(_timeOffset));  
+        configTime(0, 0, _sNtpServerName.c_str(), _sNtpServerName2, _sNtpServerName3); // enable NTP
         if(_isDayLightSaving) {
-            configTime(0, 0, _sNtpServerName.c_str(), _sNtpServerName2, _sNtpServerName3); // enable NTP
-            String strTimeOffset;
-            if (_timeOffset > 0) 
-                strTimeOffset =  "-" + String(_timeOffset);   
-            else 
-                strTimeOffset =  "+" + String(abs(_timeOffset));   
-            String fullTZ = beginTZ + strTimeOffset + endTZ;
-            //Serial.print("fullTZ "); Serial.println(fullTZ);
-            setenv("TZ", fullTZ.c_str(), 3);   // this sets TZ 
-            //setenv("TZ", "CET-2CEST,M3.5.0,M10.5.0/3", 3); 
-            tzset();    
+            fullTZ = beginTZ + strTimeOffset + endTZ;
         }
         else {
-            configTime(_timeOffset*SECS_PER_HOUR, 0, _sNtpServerName.c_str(), _sNtpServerName2, _sNtpServerName3); // enable NTP
+            //configTime(_timeOffset*SECS_PER_HOUR, 0, _sNtpServerName.c_str(), _sNtpServerName2, _sNtpServerName3); // enable NTP
+            fullTZ = beginTZ + strTimeOffset;
         }
+        //Serial.print("fullTZ "); Serial.println(fullTZ);
+        setenv("TZ", fullTZ.c_str(), 3);   // this sets TZ 
+        //setenv("TZ", "CET-2CEST,M3.5.0,M10.5.0/3", 3); 
+        tzset();    
         Serial.println("\nWaiting for time");
         t = time(NULL);
         timeinfo = localtime(&t);
@@ -143,6 +150,14 @@ void ESPTimeFunc::_getRtcTime() {
     //const timezone *tz = &utc;
     //settimeofday(tv, tz);
     settimeofday(&epoch, nullptr);
+    if(_isDayLightSaving) {
+        setenv("TZ", "CET-0CEST,M3.5.0,M10.5.0/3", 3);   // UTC + DST
+        tzset();
+    }
+    else {
+        setenv("TZ", "CET-0", 3);   // UTC
+        tzset();    
+    }
 }
 
 /*time_t ESPTimeFunc::_getRtcTime() {
@@ -195,13 +210,14 @@ bool ESPTimeFunc::setTimeRTC(uint16_t year, uint8_t month, uint8_t day, uint8_t 
 }
 
 bool ESPTimeFunc::setTimeRTC(time_t epoch_time) {
-    ESP.eraseConfig();
+    //ESP.eraseConfig();
     struct timeval epoch;
     epoch = {epoch_time, 0};
     //const timeval *tv = &epoch;
     //timezone utc = {0,0};
+    //timezone tz = {0,0};
     //const timezone *tz = &utc;
-    //settimeofday(tv, tz); 
+    //settimeofday(&epoch, &tz); 
     settimeofday(&epoch, nullptr);
     _rtc.adjust(DateTime(epoch_time));    
 }

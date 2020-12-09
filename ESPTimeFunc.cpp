@@ -39,17 +39,22 @@ bool ESPTimeFunc::beginRTC(int8_t timeOffset, bool isDayLightSaving) {
     _useRTC = true;
     _timeOffset = timeOffset;
     _isDayLightSaving = isDayLightSaving;
-    if (!_rtc.begin()) {
-        Serial.println("Couldn't find RTC");
-        while (1);
+    uint8_t _tries = 5;
+    while (--_tries && !_rtc.begin()) {
+        Serial.println(F("Couldn't find RTC"));
+        //while (1);
+        delay(100);
     }  
-    if (_rtc.lostPower()) {
-        Serial.println("RTC lost power, lets set the time!");
-        _rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // following line sets the RTC to the date & time this sketch was compiled
-        // This line sets the RTC with an explicit date & time, for example to set
-        // January 21, 2014 at 3am you would call:
-        // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-    } 
+    if (_tries > 0) {
+        Serial.println(F("RTC found"));
+        if (_rtc.lostPower()) {
+            Serial.println(F("RTC lost power, lets set the time!"));
+            _rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // following line sets the RTC to the date & time this sketch was compiled
+            // This line sets the RTC with an explicit date & time, for example to set
+            // January 21, 2014 at 3am you would call:
+            // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+        } 
+    }
     timeSynch();    
 }
 
@@ -150,14 +155,14 @@ void ESPTimeFunc::_getRtcTime() {
     //const timezone *tz = &utc;
     //settimeofday(tv, tz);
     settimeofday(&epoch, nullptr);
-    if(_isDayLightSaving) {
+    /*if(_isDayLightSaving) {
         setenv("TZ", "CET-0CEST,M3.5.0,M10.5.0/3", 3);   // UTC + DST
         tzset();
     }
     else {
         setenv("TZ", "CET-0", 3);   // UTC
         tzset();    
-    }
+    }*/
 }
 
 /*time_t ESPTimeFunc::_getRtcTime() {
@@ -169,7 +174,10 @@ void ESPTimeFunc::_getRtcTime() {
 }*/
 
 time_t ESPTimeFunc::getTimeUNIX() {
+    //struct tm *tm;
     time_t tn = time(NULL);
+    //tm = localtime(&tn);
+    //if (locTime) return mktime(tm);
     return tn; 
 }
 

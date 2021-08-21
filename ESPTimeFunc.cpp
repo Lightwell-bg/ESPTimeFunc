@@ -13,6 +13,7 @@ bool ESPTimeFunc::begin(int8_t timeOffset, bool isDayLightSaving, String sNtpSer
     _sNtpServerName3 = sNtpServerName3;
     _haveRTC ? _useRTC = useRTC : _useRTC = false;
     _allwsSynchRTCfNTP = allwsSynchRTCfNTP;
+    bool rVal = true;
     if (_haveRTC) {
         uint8_t _tries = 5;
         while (--_tries && !_rtc.begin()) {
@@ -29,9 +30,12 @@ bool ESPTimeFunc::begin(int8_t timeOffset, bool isDayLightSaving, String sNtpSer
                 // January 21, 2014 at 3am you would call:
                 // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
             } 
+            rVal =  true;
         }
+        else rVal =  false;
     }
     timeSynch();
+    return rVal;
 }
 
 bool ESPTimeFunc::beginRTC(int8_t timeOffset, bool isDayLightSaving) {
@@ -40,6 +44,7 @@ bool ESPTimeFunc::beginRTC(int8_t timeOffset, bool isDayLightSaving) {
     _timeOffset = timeOffset;
     _isDayLightSaving = isDayLightSaving;
     uint8_t _tries = 5;
+    bool rVal = true;
     while (--_tries && !_rtc.begin()) {
         Serial.println(F("Couldn't find RTC"));
         //while (1);
@@ -54,7 +59,10 @@ bool ESPTimeFunc::beginRTC(int8_t timeOffset, bool isDayLightSaving) {
             // January 21, 2014 at 3am you would call:
             // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
         } 
+        bool rVal = true;
     }
+    else rVal = false;
+    return rVal;
     timeSynch();    
 }
 
@@ -69,6 +77,7 @@ time_t ESPTimeFunc::timeSynch() {
                 Serial.println("Time Ready NTP!");      
                 return _timeUpdateTime = millis(); 
             }
+            else return _timeUpdateTime = 0;
         }
         else    {Serial.println("Time NOT Ready NTP!"); return _timeUpdateTime = 0;}
     }        
@@ -212,12 +221,15 @@ struct tm ESPTimeFunc::getTimeStruct() {
     return *tm;
 }
 
-bool ESPTimeFunc::setTimeRTC(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec) {
+void ESPTimeFunc::setTimeRTC(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec) {
+#ifdef ESP32
+#else
     ESP.eraseConfig();
+#endif
     _rtc.adjust(DateTime(year, month, day, hour, min, sec));
 }
 
-bool ESPTimeFunc::setTimeRTC(time_t epoch_time) {
+void ESPTimeFunc::setTimeRTC(time_t epoch_time) {
     //ESP.eraseConfig();
     struct timeval epoch;
     epoch = {epoch_time, 0};

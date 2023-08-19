@@ -251,7 +251,7 @@ void ESPTimeFunc::setTimeParam(bool useRTC, int8_t timeOffset, bool isDayLightSa
 }
 
 bool ESPTimeFunc::compTimeInt(float tFrom, float tTo, struct tm* timeNow) { //Comparing time for proper processing from 18.00 to 8.00
-    float tNow = timeNow->tm_hour + float(timeNow->tm_min)/100;;
+    double tNow = timeNow->tm_hour + double(timeNow->tm_min)/100;
     if (tFrom < tTo)  {
         if ((tFrom <= tNow) && (tTo >= tNow)) return true; else return false;
     }
